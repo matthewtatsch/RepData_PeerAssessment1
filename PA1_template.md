@@ -15,7 +15,7 @@ Load ggplot2 and unzip the contents of `activity.zip`:
 unzip("activity.zip")
 ```
 
-Read the contents of `activity.csv` into a data frame and convert `date` to
+Read the contents of `activity.csv` into a data frame and convert `date` to 
 Date class:
 
 ```r
@@ -38,7 +38,9 @@ names(stepsByDate) <- c("date", "steps")
 totalStepsPlot <- ggplot(stepsByDate, aes(date, steps)) + 
                     geom_bar(stat = "identity") +
                     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-                    labs(title = "Total Steps per Day")
+                    labs(title = "Total Steps per Day",
+                         x = "Date",
+                         y = "Total Steps")
 ```
 
 ![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
@@ -82,7 +84,9 @@ number of steps taken, averaged across all days (y-axis):
 
 ```r
 qplot(data = avgStepsByInterval, interval, avg_steps, geom = "line") +
-             labs(title = "Average Number of Steps by Interval")
+             labs(title = "Average Number of Steps by Interval",
+                  x = "Interval",
+                  y = "Average Steps")
 ```
 
 ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10.png) 
@@ -114,7 +118,7 @@ sum(is.na(activity))     # note that only steps column contains NAs
 The strategy does not need to be sophisticated. For example, you could use the 
 mean/median for that day, or the mean for that 5-minute interval, etc.
 
-   *Strategy is to replace `NA`s with average values for corresponding 
+*Strategy is to replace `NA`s with average values for corresponding 
 intervals as identified in `avgStepsByInterval`.*
 
 3. Create a new dataset that is equal to the original dataset but with the 
@@ -141,13 +145,15 @@ names(stepsByDateImputed) <- c("date", "steps")
 Plot:
 
 ```r
-totalStepsPlot2 <- ggplot(stepsByDateImputed, aes(date, steps)) + 
-                    geom_bar(stat = "identity") +
-                    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-                    labs(title = "Total Steps per Day")
+ggplot(stepsByDateImputed, aes(date, steps)) + 
+     geom_bar(stat = "identity") +
+     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+     labs(title = "Total Steps per Day",
+          x = "Date",
+          y = "Total Steps")
 ```
 
-![plot of chunk unnamed-chunk-16](figure/unnamed-chunk-16.png) 
+![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15.png) 
 
 Do these values differ from the estimates from the first part of the assignment? 
 
@@ -160,6 +166,43 @@ number of steps?
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-1. Create a new factor variable in the dataset with two levels -- "weekday" and 
-"weekend" indicating whether a given date is a weekday or weekend day:
+1. Create a new factor variable (`dayType`) in the dataset with two levels -- 
+"weekday" and "weekend" indicating whether a given date is a weekday or weekend
+day:
 
+```r
+activityImputed$dayType <- NA      # initialize dayType column
+
+weekdays <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+weekends <- c("Saturday", "Sunday")
+
+# populate dayType with "weekday" or "weekend"
+activityImputed$dayType[which(weekdays(activityImputed$date) %in% weekdays)] <- "weekday"
+activityImputed$dayType[which(weekdays(activityImputed$date) %in% weekends)] <- "weekend"
+
+# convert to factor for use with facet_grid
+activityImputed$dayType <- as.factor(activityImputed$dayType)
+```
+
+2. Make a panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis):
+
+First create new data frame with average steps by `interval` and `dayType`:
+
+```r
+avgStepsIntervalDayType <- with(activityImputed, 
+                                aggregate(steps, list(interval, dayType), 
+                                          mean))
+names(avgStepsIntervalDayType) <- c("interval", "day_type", "avg_steps")
+```
+
+Next create plot using `avgStepsIntervalDayType`:
+
+```r
+qplot(data = avgStepsIntervalDayType, interval, avg_steps, geom = "line") +
+     labs(title = "Average Number of Steps by Interval and Day Type", 
+          x = "Interval",
+          y = "Average Steps") +
+     facet_grid(day_type ~ .)
+```
+
+![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-18.png) 
